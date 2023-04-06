@@ -60,6 +60,7 @@ const Overview = styled.div`
   padding: 10px 20px;
   border-radius: 10px;
 `;
+
 const OverviewItem = styled.div`
   display: flex;
   flex-direction: column;
@@ -72,6 +73,7 @@ const OverviewItem = styled.div`
     margin-bottom: 5px;
   }
 `;
+
 const Description = styled.p`
   margin: 20px 0px;
 `;
@@ -172,7 +174,7 @@ function Coin() {
     ["tickers", coinId],
     () => fetchCoinTickers(coinId),
     {
-      refetchInterval: false, // TODO
+      refetchInterval: 30000,
     }
   );
   const loading = infoLoading || tickersLoading;
@@ -226,13 +228,19 @@ function Coin() {
               <Link to={`/${coinId}/chart`}>Chart</Link>
             </Tab>
             <Tab isActive={priceMatch !== null}>
-              <Link to={`/${coinId}/price`}>Price</Link>
+              <Link
+                to={{
+                  pathname: `/${coinId}/price`,
+                }}
+              >
+                Price
+              </Link>
             </Tab>
           </Tabs>
 
           <Switch>
             <Route path={`/:coinId/price`}>
-              <Price />
+              <Price coinId={coinId} current={tickersData?.quotes.USD.price} />
             </Route>
             <Route path={`/:coinId/chart`}>
               <Chart coinId={coinId} />

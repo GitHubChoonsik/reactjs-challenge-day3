@@ -15,23 +15,29 @@ interface IHistorical {
   market_cap: number;
 }
 
+interface IHistoricalError {
+  error: string;
+}
+
 interface ChartProps {
   coinId: string;
 }
 
 function Chart({ coinId }: ChartProps) {
   const isDark = useRecoilValue(isDarkAtom);
-  const { isLoading, data } = useQuery<IHistorical[]>(
+  const { isLoading, data } = useQuery<IHistorical[] | IHistoricalError>(
     ["ohlcv", coinId],
     () => fetchCoinHistory(coinId),
     {
-      refetchInterval: false, // TODO
+      refetchInterval: 30000,
     }
   );
   return (
     <div>
       {isLoading ? (
         "Loading chart..."
+      ) : "error" in data! ? (
+        "No historical data..."
       ) : (
         <ApexChart
           type="candlestick"
@@ -51,16 +57,6 @@ function Chart({ coinId }: ChartProps) {
                     y: [price.open, price.high, price.low, price.close],
                   };
                 }) ?? [],
-              // data: [
-              //   {
-              //     x: new Date(1538778600000),
-              //     y: [6629.81, 6650.5, 6623.04, 6633.33],
-              //   },
-              //   {
-              //     x: new Date(1538780400000),
-              //     y: [6632.01, 6643.59, 6620, 6630.11],
-              //   },
-              // ],
             },
           ]}
           options={{
