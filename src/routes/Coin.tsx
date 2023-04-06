@@ -7,11 +7,15 @@ import {
   useParams,
   useRouteMatch,
 } from "react-router-dom";
+import { useRecoilValue } from "recoil";
 import { Link } from "react-router-dom";
 import styled from "styled-components";
 import { fetchCoinInfo, fetchCoinTickers } from "../api";
 import Chart from "./Chart";
 import Price from "./Price";
+import arrowLightIcon from "../img/left-arrow-light.png";
+import arrowDarkIcon from "../img/left-arrow-dark.png";
+import { isDarkAtom } from "../atoms";
 
 const Title = styled.h1`
   font-size: 48px;
@@ -31,15 +35,28 @@ const Container = styled.div`
 
 const Header = styled.header`
   height: 15vh;
+  max-height: 100px;
+  min-height: 70px;
   display: flex;
   justify-content: center;
   align-items: center;
+  position: relative;
+  & > a {
+    position: absolute;
+    left: 0;
+  }
+`;
+
+const ArrowIcon = styled.img`
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
 `;
 
 const Overview = styled.div`
   display: flex;
   justify-content: space-between;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: ${(props) => props.theme.boxColor};
   padding: 10px 20px;
   border-radius: 10px;
 `;
@@ -71,7 +88,7 @@ const Tab = styled.span<{ isActive: boolean }>`
   text-transform: uppercase;
   font-size: 12px;
   font-weight: 400;
-  background-color: rgba(0, 0, 0, 0.5);
+  background-color: ${(props) => props.theme.boxColor};
   border-radius: 10px;
   color: ${(props) =>
     props.isActive ? props.theme.accentColor : props.theme.textColor};
@@ -142,6 +159,7 @@ interface PriceData {
 }
 
 function Coin() {
+  const isDark = useRecoilValue(isDarkAtom);
   const { coinId } = useParams<RouteParams>();
   const { state } = useLocation<RouteState>();
   const priceMatch = useRouteMatch("/:coinId/price");
@@ -154,7 +172,7 @@ function Coin() {
     ["tickers", coinId],
     () => fetchCoinTickers(coinId),
     {
-      refetchInterval: 5000,
+      refetchInterval: false, // TODO
     }
   );
   const loading = infoLoading || tickersLoading;
@@ -166,6 +184,9 @@ function Coin() {
         </title>
       </Helmet>
       <Header>
+        <Link to={"/"}>
+          <ArrowIcon src={isDark ? arrowDarkIcon : arrowLightIcon} />
+        </Link>
         <Title>
           {state?.name ? state.name : loading ? "Loading..." : infoData?.name}
         </Title>

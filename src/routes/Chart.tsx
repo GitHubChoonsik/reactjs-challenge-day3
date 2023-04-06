@@ -1,10 +1,12 @@
 import { useQuery } from "react-query";
 import { fetchCoinHistory } from "../api";
+import { useRecoilValue } from "recoil";
 import ApexChart from "react-apexcharts";
+import { isDarkAtom } from "../atoms";
 
 interface IHistorical {
-  time_open: string;
-  time_close: string;
+  time_open: number;
+  time_close: number;
   open: number;
   high: number;
   low: number;
@@ -12,15 +14,18 @@ interface IHistorical {
   volume: number;
   market_cap: number;
 }
+
 interface ChartProps {
   coinId: string;
 }
+
 function Chart({ coinId }: ChartProps) {
+  const isDark = useRecoilValue(isDarkAtom);
   const { isLoading, data } = useQuery<IHistorical[]>(
     ["ohlcv", coinId],
     () => fetchCoinHistory(coinId),
     {
-      refetchInterval: 10000,
+      refetchInterval: false, // TODO
     }
   );
   return (
@@ -29,16 +34,38 @@ function Chart({ coinId }: ChartProps) {
         "Loading chart..."
       ) : (
         <ApexChart
-          type="line"
+          type="candlestick"
           series={[
             {
               name: "Price",
-              data: data?.map((price) => price.close),
+              data:
+                data?.map((price) => {
+                  const date = new Date(price.time_open * 1000);
+                  const year = date.getFullYear();
+                  const month = (date.getMonth() + 1)
+                    .toString()
+                    .padStart(2, "0");
+                  const day = date.getDate().toString().padStart(2, "0");
+                  return {
+                    x: `${year}-${month}-${day}`,
+                    y: [price.open, price.high, price.low, price.close],
+                  };
+                }) ?? [],
+              // data: [
+              //   {
+              //     x: new Date(1538778600000),
+              //     y: [6629.81, 6650.5, 6623.04, 6633.33],
+              //   },
+              //   {
+              //     x: new Date(1538780400000),
+              //     y: [6632.01, 6643.59, 6620, 6630.11],
+              //   },
+              // ],
             },
           ]}
           options={{
             theme: {
-              mode: "dark",
+              mode: isDark ? "dark" : "light",
             },
             chart: {
               height: 300,
@@ -48,33 +75,27 @@ function Chart({ coinId }: ChartProps) {
               },
               background: "transparent",
             },
-            grid: { show: false },
-            stroke: {
-              curve: "smooth",
-              width: 4,
-            },
             yaxis: {
-              show: false,
+              tooltip: {
+                enabled: true,
+              },
             },
             xaxis: {
-              axisBorder: { show: false },
-              axisTicks: { show: false },
-              labels: { show: false },
-              type: "datetime",
-              categories: data?.map((price) => price.time_close),
-            },
-            fill: {
-              type: "gradient",
-              gradient: { gradientToColors: ["#0be881"], stops: [0, 100] },
-            },
-            colors: ["#0fbcf9"],
-            tooltip: {
-              y: {
-                formatter: (value) => `$${value.toFixed(2)}`,
+              type: "category",
+              labels: {
+                formatter: (value) => {
+                  return value;
+                },
+              },
+              axisBorder: {
+                show: false,
+              },
+              axisTicks: {
+                show: true,
               },
             },
           }}
-        />
+        ></ApexChart>
       )}
     </div>
   );
